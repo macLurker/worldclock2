@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+					
+		<!-- Include Bootstrap 4 CSS -->
+		<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+		<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/css/bootstrap.min.css" integrity="sha384-GJzZqFGwb1QTTN6wy59ffF1BuGJpLSa9DkKMp0DgiMDm4iYMj70gZWKYbI706tWS" crossorigin="anonymous">
+		
+		<!-- Include Font Awesome 5 -->
+		<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.1/css/all.css" integrity="sha384-50oBUHEmvpQ+1lW4y57PTFmhCaXp0ML5d60M1M7uH2+nqUivzIebhndOJK28anvf" crossorigin="anonymous">
+		
+		<title>PBS 96 — Challenge Response</title>
+		
+		<!-- styles for clocks -->
+		<style>
+		.ddr-worldclock{
+			font-weight: bold;
+			border-style: solid;
+			border-color: green;
+			background-color: black;
+			color: lightgreen;
+			font-family: monospace;
+			display: block;
+			padding: 0.25em;
+			vertical-align: middle;
+			font-size: 30pt;
+			text-align: center;
+			margin-left: 5em;
+			margin-right: 5em;
+			border-width: 3px;
+			border-radius: 30px;
+		}
+
+		.ddr-worldclock-tzname{
+			color: DarkOliveGreen;
+			font-weight: normal;
+			font-size: 15pt;
+			margin-top: 0.25em;
+			margin-bottom: 0.25em;
+		}
+		</style>
+
+
+	</head>
+	
+	<body>
+	<!-- The main page body -->
+	<main class="container mb-5">
+		<!-- The Page header (a Jumbotron) -->
+		<header class="container">
+		 	<div class="text-center">
+				<h1 class=":block-4">PBS 96 Challenge Response<br><small class="text-muted">A World Clock (part 2)</small></h1>
+
+				<p class="lead">The challenge response for installment 96 of the <a href="https://bartb.ie/pbs" target="_blank" rel="noopener">Programming by Stealth</a> series.</p>
+		</div>
+		</header>
+	
+	<!-- put local clock here -->
+	<div class="row justify-content-center">
+		<label class="h2">Local time:</label>
+		<span id="clock1" class=" col col-sm"></span>
+	</div>
+
+	<br>
+	<!-- user options go here -->
+	<div class="row">
+		<div class="col-2">
+		</div>
+		<fieldset class="col-9 form form-inline mb-5" role="form" aria-labelledby="clock_config_desc">
+			<legend id="clock_config_desc" class="text-center">--- Configure Request ---</legend>
+						
+			<form action="javascript:void(0);" id="clock_config_fm">
+			
+			<!-- Timezone selection -->
+			<div class="form-group justify-content-start">
+				<label for="tz_sel">Timezone Selection </label>
+				<input type="text" id="tz_sel" class="form-control ml-3 mr-3" autocomplete="off">
+				<small class="form-text text-muted">Enter an <a href="https://en.wikipedia.org/wiki/Tz_database" target="_blank" rel="noopener">IANA timezone string</a>, or just start typing a city name for auto-complete suggestions.</small>
+			</div>
+			<br>
+			<!-- put requested time UI here -->
+			<div class="row">
+				<div class="col-8 form-group justify-content-start">
+					<label for="req_hr_dd">Request Time </label>
+					<select class="form-control ml-3 mr-3" id="req_hr_dd" aria-describedby="req_hr_desc">
+						<!-- options added by Mustache -->
+					</select>
+					:
+					<select class="form-control ml-3 mr-3" id="req_min_dd" aria-describedby="req_min_desc">
+						<!-- options added by Mustache -->
+					</select>
+					<small id="tz_sel_desc" class="form-text text-muted">Select requested time (hour & part of hour).</small>
+				</div>
+				
+				<!-- put Go button here -->
+				<div class="col-4">
+					<button id="go_btn" class="btn btn-primary btn-sm mb-1 ml-2">Go!</button>
+				</div>
+			</div>
+
+			</form>
+		</fieldset>
+	</div>
+
+	<!-- app output goes here -->
+	<div class="row justify-content-center">
+		<label class="h2">Local Meeting Time</label>
+		<span id="clock2" class=" col col-sm"></span>
+		<label class="h2">Remote Meeting Time</label>
+		<span id="clock3" class=" col col-sm"></span>
+		<div>
+			<br>
+			<div class="form-group text-center">
+				<label class="h3" for="req_link_tb">Remote Invitation Link</label>
+				<input type="text" id="req_link_tb" class="form-control" placeholder="https://a_link.com" size=120>
+				<small class="form-text text-muted">Copy this link & send to remote user.</small>
+			</div>
+		</div>
+	</div>
+	
+	<!-- put any errors here -->
+	<div id="output_div" class="m-3"></div>
+
+	<!-- revision date container -->
+	<div class="container">
+		<div class="row">	<!-- outer container, row 8> -->
+			<div class="col-12">	<!-- outer container, col 1> -->
+				<aside class="float-right text-muted p-2 mt-5 bg-light border rounded">
+				<p class="p-1 d-inline font-weight-light align-right" style="font-size: 10pt"> Last modified on:</p>
+				<p class="d-inline font-weight-light align-right" style="font-size: 10pt">05/24/2020; </p>
+				<p id="ddrwc_version" class="d-inline font-weight-light align-right" style="font-size: 10pt"></p>
+				</aside>
+			</div>		<!-- outer container, end of col> -->
+		</div>		<!-- outer container, end of row 8> -->
+	</div>
+
+	
+	<!-- ******************************************************************* -->
+	<!-- Mustache Templates -->
+	<!-- ******************************************************************* -->
+	<!-- Currency Table header template for Mustache -->
+	<script type="text/html" id="SelectTpl">
+		{{#.}}
+			<option value="{{{.}}}" >{{{.}}}</option>
+		{{/.}}
+	</script>
+
+	</main>
+		
+	</body>
+	
+	<!-- Import the is.js micro checking library -->
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/is_js/0.9.0/is.min.js" integrity="sha256-lnJeulOa3e5IO2EzHr8jKJ3CbT80MBwkS5a+n2ooIr4=" crossorigin="anonymous"></script>
+
+	<!-- Include Bootstrap JavaScript from CDNs -->
+	<script src="https://code.jquery.com/jquery-3.4.0.min.js" integrity="sha256-BJeo0qm959uMBGb65z40ejJYGSgR7REI4+CW1fNKwOg=" crossorigin="anonymous"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.6/umd/popper.min.js" integrity="sha384-wHAiFfRlMFy6i5SRaxvfOCifBUQy1xHdJ/yoi7FRNXMRBu5WHdZYu1hA6ZOblgut" crossorigin="anonymous"></script>
+	<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/js/bootstrap.min.js" integrity="sha384-B0UglyR+jN6CkvvICOB2joaf5I4l3gm9GU6Hc1og6Ls7i6U/mkkaduKaBhlAXv9k" crossorigin="anonymous"></script>
+
+	<!-- Include Mustache.js -->
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/mustache.js/3.0.1/mustache.min.js" integrity="sha256-srhz/t0GOrmVGZryG24MVDyFDYZpvUH2+dnJ8FbpGi0=" crossorigin="anonymous"></script>
+
+	<!-- Include Bootstrap 4 Autocomplete from CDN -->
+	<script src="https://cdn.jsdelivr.net/npm/bootstrap-4-autocomplete/dist/bootstrap-4-autocomplete.min.js" crossorigin="anonymous"></script>
+
+	<!-- Import the moment.js & moment-timezone.js libraries -->
+	<script type="text/javascript" src="lib/moment.js"></script>
+	<script type="text/javascript" src="lib/moment-timezone-with-data.js"></script>
+
+	<!-- Import the URI.js Library -->
+	<script type="text/javascript" src="lib/URI-1.18.1.js"></script>
+
+	<!-- Import the pbs.WorldClock API -->
+	<script type="text/javascript" src="lib/WorldClock.js"></script>
+
+	<!-- Custom JS Code -->
+	<script type="text/javascript">
+	
+	// ******************************************************
+	// Global variables
+	// ******************************************************
+	// set default timezone to local timezone
+	const DEFAULT_TZ = Intl.DateTimeFormat().resolvedOptions().timeZone;
+	const DEFAULT_TF = 12;				// 12-hour clock display is default
+	const DEFAULT_TIME = "12:34";		// default time for fixed time clocs
+	const tzAutoCompleteSource = {};	// timezone auto-complete dictionary
+
+	let TZ_selected = DEFAULT_TZ;
+	let hoursSelected = DEFAULT_TF;		// true = use 24-hour clock
+	let secDisplay = "FALSE";			// true = display seconds
+	let divDisplay = "FALSE";			// true = show pulsing dividers
+	
+	let clockWidget ={};			// moment.js object
+	let loadComplete = false;		// true = DOM loaded
+	let sortBy = 0;					// 0 = sort by region & name, 1 = sort by TZ #
+	
+	let CW2 = {};					// requestor clock spans
+	let CW3 = {};
+	
+	// ******************************************************
+	// a jQuery Document Ready Event Handler
+	// ******************************************************
+	$(function(){
+	// constants
+	const ERRMSG = 0;
+	const HOURS_IN_DAY = 24;
+	const MINUTES_IN_HOUR = 60;
+
+	const $outputDiv = $('#output_div');	// where to put error/status messages
+	const $CLOCK = $('#clock1');			// clock widget
+	const $TZSEL_SELECT = $('#tz_sel');		// timezone selection
+	const $GO_BTN = $('#go_btn');			// Go button
+	const $REQ_HR_DD = $('#req_hr_dd');		// requested time: hour
+	const $REQ_MN_DD = $('#req_min_dd');	// requested time: minute
+	const $INVITATION_URL = $('#req_link_tb');		// invitation URL
+
+	// ******************************************************
+	// helper functions
+	// ******************************************************
+	// ------------------------------------------------------------
+	// Create timezone auto-complete dictionary -->
+	// IN: nothing
+	// OUT: updated TZ dictionary
+	// ------------------------------------------------------------
+	function addTZOptions () {
+
+		// create auto-complete dictionary
+		let tzAutoCompleteCounter = 1;
+		for(const tzName of moment.tz.names()){
+			// break the timezone into parts
+			const tzParts = tzName.split('\/');
+					
+			// skip timezones with more than two parts
+			if(tzParts.length != 2) continue;
+							
+			// skip the artificial Etc region
+			if(tzParts[0] === 'Etc') continue;
+					
+			// if we got here, add the timezone as an option
+			tzAutoCompleteSource[tzName] = tzAutoCompleteCounter;
+			tzAutoCompleteCounter++;
+		}
+
+		// enable auto-complete on TZ input textbox
+		$TZSEL_SELECT.autocomplete({
+			source: tzAutoCompleteSource, // the autocompelte values
+			maximumItems: 10, // the maximum autocomplete suggestions
+			treshold: 1, // the minimum number of characters to search
+			onSelectItem: function(){ // event handler for selection of autocomplete suggestion
+				$TZSEL_SELECT.trigger('input');
+			}
+		});
+		
+		// set the default
+		//$TZSEL_SELECT.val(DEFAULT_TZ);
+	}
+	// ------------------------------------------------------------
+	// Add request time selection options to page               -->
+	// IN: nothing
+	// OUT: updated display
+	// ------------------------------------------------------------
+	function addTimeOptions () {
+		// Add hours in 24-hour format (0-23)
+		let hrArray = [];
+		
+		// loop through the array to sum the values
+		for(let i = 0; i < HOURS_IN_DAY; i++){
+			hrArray[i] = pad(i,2);
+		}
+		
+		// create the jQuery widget from the template & timezone array
+		const $hrSelectOptions = $(Mustache.render($('#SelectTpl').html(), hrArray));
+
+		// add the new widget to the page
+		$('#req_hr_dd').append($hrSelectOptions);
+
+		// Add parts of hour in 15-minute increments
+		let mnArray = [];
+		
+		// loop through the array to sum the values
+		for(let i = 0; i < (MINUTES_IN_HOUR/15); i++){
+			mnArray[i] = pad(i*15, 2);
+		}
+
+		// create the jQuery widget from the template & timezone array
+		const $mnSelectOptions = $(Mustache.render($('#SelectTpl').html(), mnArray));
+
+		// add the new widget to the page
+		$('#req_min_dd').append($mnSelectOptions);
+	}
+
+	// ------------------------------------------------------------
+	// add leading zeros to output string                       -->
+	// IN: number/string to pad, desired length of string
+	// OUT: string with number & leading zeroes
+	// ------------------------------------------------------------
+	function pad(num, size) {
+		var s = num+"";
+		while (s.length < size) s = "0" + s;
+		return s;
+	}
+
+	// ------------------------------------------------------------
+	// Extract local/remote timezone/requested time from URL    -->
+	// IN: nothing
+	// OUT: object with all URL data or defaults if data missing from URL
+	// ------------------------------------------------------------
+	function getURLData() {
+		// set defaults: sender timezone, sender requested time, receiver timezone, receiver requested time
+		let dataObj = {
+			"stz": DEFAULT_TZ,
+			"stime": DEFAULT_TIME,
+			"rtz": DEFAULT_TZ,
+			"rtime": DEFAULT_TIME
+		}
+
+		// get URL data section from current URL
+		let urlData = (new URI()).query();
+		
+		// if data in URL,
+		if (urlData.length > 0) {
+			// split URL data string into each data section
+			let dataArray = urlData.split("&");
+
+			// for each data section, do:
+			dataArray.forEach(function (d,i) {
+				let items = d.split("=");		// split into keyword/value
+				dataObj[items[0]] = items[1];	// add to data object
+			});		// end for
+
+		} else { 
+			// else (no data in URL) return defaults
+		}
+		
+		console.log (`GUD: sender tz is ${dataObj.stz}`);
+		console.log (`GUD: sender time is ${dataObj.stime}`);
+		console.log (`GUD: receiver tz is ${dataObj.rtz}`);
+		console.log (`GUD: receiver tz is ${dataObj.rtime}`);
+
+		return dataObj;			// return parsed data as a object
+	}
+
+	// ========================================================
+	// Error Display functions
+	// ========================================================
+	// --------------------------------------
+	// Extract file/URL data from error data -->
+	// IN: error object from catch
+	// OUT: string
+	// --------------------------------------
+	function parseErrorResponse (errObj) {
+		//console.log (`PER: error statusText is ${errObj.statusText}`);
+		//console.log (`PER: error responseText is ${errObj.responseText}`);
+		let s1 = "";
+		let ss1 = [];
+		let ss2 = [];
+		try {
+			s1 = errObj.responseText;
+			ss1 = s1.split("<p>");		// remove first part of error response
+			ss2 = ss1[1].split("</p>");	// remove last part of error response
+		} catch {
+			ss2[0] = errObj.responseText;
+		}
+		console.log (`PER: ${ss2}`);
+		
+		return ss2[0];
+	}
+	
+	// --------------------------------------------
+	// Provide error response & display message -->
+	// IN: error object from catch, operation text to go in error message
+	// OUT: resulting error message
+	// --------------------------------------
+	function processErrorCondition (errD, opText, errSource) {
+		errData = errD;		// put error object in global variable for console access
+		errDetail = "";
+		
+		console.log(`PEC: In catch`);
+		console.log(`PEC: errData: ${errD}, type is ${typeof errD}`);
+
+		// if no responseText
+		if (errD.responseText == undefined) {
+
+			//if no responseText, try statusText, if that's not there, use message object as is
+			if (errD.statusText == undefined) {
+				errDetail = errD;			// use error return as is
+			} else {
+				errDetail = errD.statusText;
+			}
+
+		} else {	// if is a file error
+			errDetail = parseErrorResponse(errD);	// extract file name from error data
+		}
+		console.log(`PEC: Promises rejected: ${errDetail}`);
+
+		displayStatusMessage(errSource, errDetail, opText, ERRMSG);
+		
+		return errDetail;
+	}
+
+	// --------------------------------------
+	// display primary and error messages -->
+	// --------------------------------------
+	function displayStatusMessage(sTxt, eTxt, fType, mType){
+		
+		console.log (`DSM: error is ${eTxt}`);
+		// <!-- primary message Mustache template
+		const priTemplate = "<div class=\"alert alert-primary border border-primary rounded mb-3\"> {{message}} {{> closeBtn}}</div>";
+		// <!-- error message Mustache template partials -->
+		const errTemplate = "<div class=\"alert alert-danger border border-danger rounded mb-3\"> {{message}} {{> closeBtn}}</div>"
+		// <!-- error message Mustache template partials -->
+		const partials = "closeBtn: \'<button type=\"button\" class=\"close\" data-dismiss=\"alert\" aria-label=\"Close\"><span aria-hidden=\"true\">&times;</span></button>\'";
+
+		let ajaxErrMsg = "";
+		let tmplt = 0;
+
+		// remove any existing messages
+		//$outputDiv.empty().text(' ');		// clear out the previous error messages
+
+		if (mType ==ERRMSG) {
+			// if an error message
+			tmplt = errTemplate;
+			ajaxErrMsg = `Error (${fType}): status: (${sTxt}), Error message = ${eTxt}`;
+
+		} else {
+			// if a primary message
+			tmplt = priTemplate;
+			ajaxErrMsg = `Alert (${fType}): status: OK, Message = ${eTxt}`;
+
+		}
+		//window.alert (ajaxErrMsg);
+		//console.log (`DSM ERROR: ${ajaxErrMsg}`);
+		
+		const $alert = $(Mustache.render(tmplt, { message: ajaxErrMsg }, partials));
+		$alert.alert({});
+		console.log ("DSM: append message to output div ");
+		$outputDiv.append($alert);
+
+		return;
+	}
+
+	// ========================================================
+	// Button Click Event Handlers
+	// ========================================================
+	// set handlers for when checkboxes change
+	// new timezone selected
+//	$($TZSEL_SELECT).on('input', function(){
+//		TZ_selected = $TZSEL_SELECT.val();		// get the tz selected
+//		//console.log (`a timezone selected: ${TZ_selected}`);
+//		updateClockDisplay ('TZ select');
+//	}).trigger('input');
+	
+	
+	// validate timezone string entered
+	$TZSEL_SELECT.on('input', function(){
+		// validate the timezone
+		if (CW3.isValidTimeZone($TZSEL_SELECT.val())) {
+			// is valid
+			TZ_selected = $TZSEL_SELECT.val();		// get the tz entered
+			$TZSEL_SELECT.removeClass('is-invalid').addClass('is-valid');
+
+			updateClockDisplay (CW3, 'TZ select');
+		} else {
+			// is invalid
+			$TZSEL_SELECT.removeClass('is-valid').addClass('is-invalid');
+
+			// ignore it?
+		}
+	});
+
+	// Go button
+	$($GO_BTN).click(function(){
+		console.log ("Go button clicked");
+		
+		// get hours/minutes from drop-down widget
+		let hrs = $($REQ_HR_DD).val();		// this is string: hours
+		let mns = $($REQ_MN_DD).val();		// this is string: minutes
+		
+		// create new fixed time string
+		let ftStr = hrs + ":" + mns;
+
+		// update requestor clocks fixed time attribute
+		CW2.fixedTime = ftStr;
+		CW3.fixedTime = ftStr;
+		
+		// render clocks again with updated time
+		CW2.renderClock(CW2);
+		CW3.renderClock(CW3);
+		
+		// Build URL with invitation data
+		// create a URI object representing the URL of the page
+		let invtURL = new URI();
+		
+		// fetch sender data
+		let stz = CW2.timezone;
+		let stime = CW2.clockTime;
+		
+		// fetch receiver data
+		let rtz = CW3.timezone;
+		let rtime = CW3.clockTime;
+
+		// Build data string
+		let dataString = "?stz=" + stz + 
+				"&stime=" + stime + 
+				"&rtz=" + rtz + 
+				"&rtime=" + rtime;
+		console.log (`GO: data string is ${dataString}`);
+		
+		// put both together & put in text box
+		$INVITATION_URL.val(invtURL+dataString);
+		
+		// select text box
+		$INVITATION_URL.select();
+	});
+	
+//	// type of hours (24 or 12) changed
+//	$($HOUR_CB).on('input', function(){
+//		if ($HOUR_CB.prop('checked')) {
+//			hoursSelected = 24;
+//		} else {
+//			hoursSelected = 12;
+//		}
+//		console.log (`hours display changed to: ${hoursSelected}`);
+//		console.log (`a timezone selected: ${TZ_selected}`);
+//
+//		updateClockDisplay ('Hours select');
+//	}).trigger('input');
+//	
+//	// display of seconds changed
+//	$($SECS_CB).on('input', function(){
+//		if ($SECS_CB.prop('checked')) {
+//			secDisplay = "TRUE";
+//		} else {
+//			secDisplay = "FALSE";
+//		}
+//		//console.log (`seconds display changed to: ${secDisplay}`);
+//		updateClockDisplay ('Seconds display');
+//	}).trigger('input');
+//	
+//	// pulsing divider on/off changed
+//	$($DIV_CB).on('input', function(){		
+//		if ($DIV_CB.prop('checked')) {
+//			divDisplay = "TRUE";
+//		} else {
+//			divDisplay = "FALSE";
+//		}
+//		//console.log (`pulsing dividers display changed to: ${divDisplay}`);
+//		updateClockDisplay ('Blinking separators');
+//	}).trigger('input');
+
+	// --------------------------------------------
+	// Update clock display                     -->
+	// IN: which clock to update, string identifying what changed, 
+	// OUT: nothing, updated clock display
+	// --------------------------------------------
+	// data-timeformat="12" data-displayseconds="TRUE" data-blink="true"
+	function updateClockDisplay (clk, src) {
+		console.log (`UCD: update clock display now: ${src}`);	
+		
+		$outputDiv.empty().text(' ');		// clear out any previous error messages
+
+		// only update clock after it loads
+		if (loadComplete) {
+			try {
+				// set timezone
+				clk.timezone = TZ_selected;
+				
+//				// set 12/24-hour clock display
+//				clk.timeformat = hoursSelected;
+//				
+//				// set seconds display
+//				clk.displayseconds = secDisplay;
+//				
+//				// set pulsing dividers display
+//				clk.blink = divDisplay;
+				
+				clk.renderClock(clk);
+				
+			} catch (err) {
+				const errDetail = processErrorCondition (err,"updateClockDisplay", src);
+				console.log ('Error while updating clock display');
+			}
+
+		}
+
+	};
+
+	// ******************************************************
+	// Main Document Handler
+	// ******************************************************	
+	console.log ("start DOM");
+	
+	//---------------------------------------------------
+	// Initialization
+	//---------------------------------------------------
+	try {
+		let senderData = getURLData();		// get TZ data (if any) from URL
+		
+		addTZOptions();		// create dictionary of valid timezones for auto-complete
+		addTimeOptions();	// build requested time selection options
+		
+		$TZSEL_SELECT.val(TZ_selected);	// set default timzone to local timezone
+		
+		console.log ("make local clock");
+		clockWidget = new WorldClock($('#clock1'), 
+			{
+				tz: DEFAULT_TZ, 
+				timeFormat: 24,
+				displaySeconds: true
+			});
+			
+		// test clock to check out WC class constructor
+		console.log ("make request clocks");
+
+		CW2 = new WorldClock($('#clock2'),		// for local requested time
+			{
+				tz: senderData.rtz,
+				timeFormat: 24,
+				fixedTime: senderData.rtime
+			});
+
+		CW3 = new WorldClock($('#clock3'),		// for remote requested time
+			{
+				tz: senderData.stz,
+				timeFormat: 24,
+				fixedTime: senderData.stime
+			});
+		
+		loadComplete = true;
+
+	} catch (err) {
+		const errDetail = processErrorCondition (err,"WorldClock class", "JS");
+		console.log ('Error while displaying clock');
+	}
+
+	TZ_selected = DEFAULT_TZ;
+
+	// add ddr.WorldClokc version info to page
+	$('#ddrwc_version').text(clockWidget.version);
+
+	console.log ("end of DOM load");
+	});
+	
+	</script>
+</html>
+
